@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  bot:
+    build: .
+    container_name: flashcart-bot
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    # For webhook mode, uncomment:
+    # ports:
+    #   - "8000:8000"
+    # command: ["uvicorn", "bot.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: flashcart-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

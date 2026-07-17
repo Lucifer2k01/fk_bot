@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashCart Bot — Account Login</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+    :root { --primary:#2563eb; --primary-dark:#1e40af; --bg:#0f172a; --surface:#1e293b; --text:#f8fafc; --muted:#94a3b8; --border:#334155; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .container { width:100%; max-width:480px; padding:24px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+    h1 { font-size:24px; font-weight:700; margin-bottom:8px; }
+    .subtitle { color:var(--muted); font-size:14px; margin-bottom:24px; }
+    .step { display:none; }
+    .step.active { display:block; }
+    .step-number { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--primary); font-weight:700; font-size:12px; margin-right:10px; }
+    label { display:block; font-size:13px; font-weight:500; margin-bottom:8px; color:var(--muted); }
+    input, textarea, select { width:100%; padding:12px 14px; background:#0f172a; border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:inherit; font-size:14px; outline:none; transition:all .2s; }
+    input:focus, textarea:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.2); }
+    textarea { min-height:120px; resize:vertical; font-family:monospace; font-size:12px; }
+    .btn { width:100%; padding:14px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:600; font-size:14px; cursor:pointer; transition:all .2s; margin-top:16px; }
+    .btn:hover { background:var(--primary-dark); transform:translateY(-1px); }
+    .btn-secondary { background:var(--border); color:var(--text); }
+    .btn-secondary:hover { background:#475569; }
+    .info-box { background:rgba(37,99,235,0.1); border-left:3px solid var(--primary); padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0; font-size:13px; color:#bfdbfe; }
+    .success { background:rgba(5,150,105,0.1); border-left-color:#059669; color:#a7f3d0; }
+    .error { background:rgba(239,68,68,0.1); border-left-color:#ef4444; color:#fca5a5; }
+    .cookie-preview { background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:monospace; font-size:11px; color:var(--muted); overflow-x:auto; white-space:nowrap; margin-top:8px; }
+    .spinner { display:none; width:20px; height:20px; border:2px solid rgba(255,255,255,0.2); border-top-color:white; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .flex { display:flex; gap:12px; }
+    .flex .btn { flex:1; margin-top:0; }
+    .telegram-input { display:flex; gap:8px; }
+    .telegram-input input { flex:1; }
+    .telegram-input .btn { width:auto; padding:12px 20px; margin-top:0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>⚡ FlashCart Bot</h1>
+      <p class="subtitle">Link your Flipkart account for auto-buy</p>
+
+      <!-- Step 1: Telegram ID -->
+      <div class="step active" id="step1">
+        <label><span class="step-number">1</span>Enter your Telegram User ID</label>
+        <div class="info-box">
+          Get your ID from <a href="https://t.me/userinfobot" target="_blank" style="color:#60a5fa;">@userinfobot</a> on Telegram
+        </div>
+        <div class="telegram-input">
+          <input type="number" id="telegramId" placeholder="e.g., 123456789">
+          <button class="btn" onclick="goToStep(2)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Cookie Instructions -->
+      <div class="step" id="step2">
+        <label><span class="step-number">2</span>Copy Flipkart Cookies</label>
+        <div class="info-box">
+          <b>How to get cookies:</b><br>
+          1. Login to <a href="https://www.flipkart.com" target="_blank" style="color:#60a5fa;">flipkart.com</a> in Chrome/Edge<br>
+          2. Press F12 → Application → Cookies → www.flipkart.com<br>
+          3. Right-click → "Copy all as string"<br>
+          4. Paste below
+        </div>
+        <textarea id="cookieInput" placeholder="SN=abc123; _t_wid=xyz; vid=..."></textarea>
+        <div class="flex" style="margin-top:16px;">
+          <button class="btn btn-secondary" onclick="goToStep(1)">← Back</button>
+          <button class="btn" onclick="validateAndSubmit()">
+            <span class="spinner" id="spinner"></span>
+            <span id="btnText">Link Account</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div class="step" id="step3">
+        <div class="info-box success">
+          <b>✅ Account linked successfully!</b><br>
+          Your Flipkart session is now active in the bot.<br><br>
+          Go back to Telegram and send a product link to start tracking.
+        </div>
+        <button class="btn" onclick="location.reload()">Link Another Account</button>
+      </div>
+
+      <!-- Step 3b: Error -->
+      <div class="step" id="step3-error">
+        <div class="info-box error" id="errorBox">
+          <b>❌ Failed to link account</b><br>
+          <span id="errorText">Invalid cookies or session expired.</span>
+        </div>
+        <button class="btn btn-secondary" onclick="goToStep(2)">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let telegramId = '';
+    function goToStep(n) {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('step' + n).classList.add('active');
+      if (n === 2) telegramId = document.getElementById('telegramId').value;
+    }
+
+    async function validateAndSubmit() {
+      const cookies = document.getElementById('cookieInput').value.trim();
+      if (!cookies || cookies.length < 50) {
+        alert('Please paste the full cookie string from Flipkart.');
+        return;
+      }
+
+      document.getElementById('spinner').style.display = 'inline-block';
+      document.getElementById('btnText').textContent = 'Validating...';
+
+      try {
+        const resp = await fetch('/api/link-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegram_id: telegramId, cookies: cookies, account_name: 'Web' })
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+          goToStep(3);
+        } else {
+          document.getElementById('errorText').textContent = data.error || 'Unknown error';
+          document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+          document.getElementById('step3-error').classList.add('active');
+        }
+      } catch (e) {
+        document.getElementById('errorText').textContent = 'Network error. Please try again.';
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step3-error').classList.add('active');
+      } finally {
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('btnText').textContent = 'Link Account';
+      }
+    }
+  </script>
+</body>
+</html>
